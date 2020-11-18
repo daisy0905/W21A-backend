@@ -50,6 +50,31 @@ def login():
                 return Response(json.dumps(user, default=str), mimetype="text/html", status=201)
             else:
                 return Response("Something went wrong!", mimetype="text/html", status=500)
+    
+    if request.method == 'DELETE':
+        conn = None
+        cursor = None
+        rows = None
+        post_token = request.json.get("token")
+        try:
+            conn = mariadb.connect(user=dbcreds.user, password=dbcreds.password, port=dbcreds.port, database=dbcreds.database, host=dbcreds.host)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM user_login WHERE token=?", [post_token,])
+            conn.commit()
+            rows = cursor.rowcount
+        except Exception as error:
+            print("Something went wrong (THIS IS LAZAY): ")
+            print(error)
+        finally:
+            if cursor != None:
+                cursor.close()
+            if conn != None:
+                conn.rollback()
+                conn.close()
+            if rows == 1:
+                return Response("logout success!", mimetype="text/html", status=201)
+            else:
+                return Response("Something went wrong!", mimetype="text/html", status=500)
 
 @app.route('/post', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def posts():
@@ -81,13 +106,13 @@ def posts():
         cursor = None
         post_username = request.json.get("username")
         post_content = request.json.get("content")
-        item_token = request.json.get("token")
+        post_token = request.json.get("token")
         rows = None
 
         try:
             conn = mariadb.connect(user=dbcreds.user, password=dbcreds.password, port=dbcreds.port, database=dbcreds.database, host=dbcreds.host)
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM user_login WHERE token=?", [item_token,])
+            cursor.execute("SELECT * FROM user_login WHERE token=?", [post_token,])
             user = cursor.fetchone()
             print(user)
             if user != None and user != []:
@@ -112,14 +137,14 @@ def posts():
     elif request.method == 'PATCH':
         conn = None
         cursor = None
-        item_token = request.json.get("token")
+        post_token = request.json.get("token")
         post_content = request.json.get("content")
         post_id = request.json.get("postId")
         rows = None
         try:
             conn = mariadb.connect(user=dbcreds.user, password=dbcreds.password, port=dbcreds.port, database=dbcreds.database, host=dbcreds.host)
             cursor = conn.cursor() 
-            cursor.execute("SELECT * FROM user_login WHERE token=?", [item_token,])
+            cursor.execute("SELECT * FROM user_login WHERE token=?", [post_token,])
             user = cursor.fetchone()
             if user != None and user != []:
                 user_id = user[0]
