@@ -8,6 +8,43 @@ import random
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/users', methods=['POST', 'DELETE'])
+def signup():
+    if request.method == 'POST':
+        conn = None
+        cursor = None
+        user_username = request.json.get("username")
+        user_password = request.json.get("password")
+        rows = None
+        user = None
+        try:
+            conn = mariadb.connect(user=dbcreds.user, password=dbcreds.password, port=dbcreds.port, database=dbcreds.database, host=dbcreds.host)
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO users(username, password) VALUES(?, ?)", [user_username, user_password])
+            conn.commit()
+            rows = cursor.rowcount
+            print(rows)
+            cursor.execute("SELECT * FROM users WHERE username=? AND password=?", [user_username, user_password])
+            users = cursor.fetchall()
+            user = {
+                "id": users[0][0],
+                "username": users[0][1],
+                "password": users[0][2]
+            }
+        except Exception as error:
+            print("Something went wrong (THIS IS LAZAY): ")
+            print(error)
+        finally:
+            if(cursor != None):
+                cursor.close()
+            if(conn != None):
+                conn.rollback()
+                conn.close()
+            if(rows == 1):
+                return Response(json.dumps(user, default=str), mimetype="text/html", status=201)
+            else:
+                return Response("Something went wrong!", mimetype="text/html", status=500)
+
 @app.route('/login', methods=['POST', 'DELETE'])
 def login():
     if request.method == 'POST':
@@ -36,7 +73,7 @@ def login():
                     "id": users[0][0],
                     "username": users[0][1],
                     "token": token
-               }
+                }
         except Exception as error:
             print("Something went wrong (THIS IS LAZAY): ")
             print(error)
@@ -51,7 +88,7 @@ def login():
             else:
                 return Response("Something went wrong!", mimetype="text/html", status=500)
     
-    if request.method == 'DELETE':
+    elif request.method == 'DELETE':
         conn = None
         cursor = None
         rows = None
@@ -108,7 +145,6 @@ def posts():
         post_content = request.json.get("content")
         post_token = request.json.get("token")
         rows = None
-
         try:
             conn = mariadb.connect(user=dbcreds.user, password=dbcreds.password, port=dbcreds.port, database=dbcreds.database, host=dbcreds.host)
             cursor = conn.cursor()
@@ -185,7 +221,6 @@ def posts():
                 cursor.execute("DELETE FROM post WHERE postId=? AND user_id=?", [post_id, user_id])
                 conn.commit()
                 rows = cursor.rowcount
-
         except Exception as error:
             print("Something went wrong (THIS IS LAZY)")
             print(error)
