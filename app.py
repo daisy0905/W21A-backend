@@ -8,7 +8,7 @@ import random
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/users', methods=['POST', 'DELETE'])
+@app.route('/api/users', methods=['POST', 'DELETE'])
 def signup():
     if request.method == 'POST':
         conn = None
@@ -45,7 +45,7 @@ def signup():
             else:
                 return Response("Something went wrong!", mimetype="text/html", status=500)
 
-@app.route('/login', methods=['POST', 'DELETE'])
+@app.route('/api/login', methods=['POST', 'DELETE'])
 def login():
     if request.method == 'POST':
         conn = None
@@ -113,7 +113,7 @@ def login():
             else:
                 return Response("Something went wrong!", mimetype="text/html", status=500)
 
-@app.route('/post', methods=['GET', 'POST', 'PATCH', 'DELETE'])
+@app.route('/api/post', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def posts():
     if request.method == 'GET':
         conn = None
